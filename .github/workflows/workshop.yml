@@ -69,7 +69,7 @@ jobs:
         run: |
           id=$(tr -dc '0-9' < tools/workshop/workshop_id.txt)
           if [ -z "$id" ]; then
-            id=$(node tools/workshop/update.mjs find)
+            id=$(node tools/workshop/update.mjs find | tr -dc '0-9')
             if [ -n "$id" ]; then echo "Using the existing item $id"; else echo "No item yet – making a new hidden one"; fi
           fi
           echo "id=$id" >> "$GITHUB_OUTPUT"
@@ -92,7 +92,7 @@ jobs:
       - name: Build the Workshop addon from game/
         run: python3 tools/workshop/make_addon.py
       - name: Upload it (SteamCMD)
-        uses: gmod-workshop/workshop-upload@v1
+        uses: gmod-workshop/workshop-upload@abf7dd8f90a29039627e1278508531957fe5b708 # v1.1.0 (the v1 tag is older and lacks visibility and markdown-changelog)
         with:
           username: ${{ secrets.STEAM_USERNAME }}
           vdf: ${{ secrets.STEAM_VDF }}
@@ -109,7 +109,7 @@ jobs:
           ID: ${{ steps.item.outputs.id }}
         run: |
           id="$ID"
-          if [ -z "$id" ]; then id=$(node tools/workshop/update.mjs find); fi
+          if [ -z "$id" ]; then id=$(node tools/workshop/update.mjs find | tr -dc '0-9'); fi
           if [ -z "$id" ]; then echo "::error::Could not find the new Workshop item"; exit 1; fi
           node tools/workshop/update.mjs "$id"
           echo "$id" > tools/workshop/workshop_id.txt
