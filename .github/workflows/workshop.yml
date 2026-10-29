@@ -2,7 +2,7 @@
 # GitHub; the release notes become the change note. It can also be run by hand from the Actions tab.
 #
 # The first time (no ID in tools/workshop/workshop_id.txt) it uses the newest of your Workshop items
-# called "Alletiders Nisse", or makes a new hidden one, and saves its ID in the repository.
+# with the title in workshop.json, or makes a new hidden one, and saves its ID in the repository.
 # Every upload then also sets the addon type and tags, the title and the description from
 # tools/workshop/ (workshop.json and description.bbcode) – SteamCMD can't, so that part logs in like
 # the Steam client does. The picture and visibility are left as they are on Steam.
@@ -136,7 +136,7 @@ jobs:
                'contentfolder': ws + '/upload', 'changenote': q(os.environ.get('NOTE') or 'Update')}
           if not os.environ.get('ID'):
               # a new item: a title, the picture, and hidden until it has been checked
-              f.update({'title': 'Alletiders Nisse', 'previewfile': ws + '/tools/workshop/icon.jpg', 'visibility': '2'})
+              f.update({'title': __import__('json').load(open(ws + '/tools/workshop/workshop.json'))['title'], 'previewfile': ws + '/tools/workshop/icon.jpg', 'visibility': '2'})
           body = ''.join(f'\t"{k}" "{v}"\n' for k, v in f.items())
           open(ws + '/addon.vdf', 'w').write('"workshopitem"\n{\n' + body + '}\n')
           PY

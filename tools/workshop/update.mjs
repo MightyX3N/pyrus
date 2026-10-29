@@ -21,7 +21,8 @@ try {
     const files = await userFiles(client, cfg.appid);
     log(`Your ${files.length} Garry's Mod Workshop items:`);
     for (const f of files) log(`  ${f.publishedfileid}  ${f.title}  [${(f.tags || []).map(t => t.tag).join(', ')}]`);
-    const mine = files.filter(f => f.title === cfg.title).sort((a, b) => b.time_created - a.time_created);
+    const titles = [cfg.title, ...(cfg.oldTitles || [])];
+    const mine = files.filter(f => titles.includes(f.title)).sort((a, b) => b.time_created - a.time_created);
     if (mine.length > 1) log(`::warning::There are ${mine.length} items called "${cfg.title}" – using the newest, ${mine[0].publishedfileid}. Delete the others on Steam.`);
     if (mine.length) process.stdout.write(String(mine[0].publishedfileid));
   } else {

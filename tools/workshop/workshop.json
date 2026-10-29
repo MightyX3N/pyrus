@@ -1,6 +1,15 @@
 {
   "appid": 4000,
-  "title": "Alletiders Nisse",
+  "title": "Pyrus - Alletiders Nisse",
   "description": "description.bbcode",
-  "tags": ["Addon", "gamemode", "fun", "cartoon", "comic"]
+  "tags": [
+    "Addon",
+    "gamemode",
+    "fun",
+    "cartoon",
+    "comic"
+  ],
+  "oldTitles": [
+    "Alletiders Nisse"
+  ]
 }
