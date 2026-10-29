@@ -2,11 +2,18 @@
 <html lang="da">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#4a0c10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pyrus">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <title>Alletiders Nisse</title>
 <link rel="icon" type="image/png" href="game/icon24.png">
 <style>
-  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
   #screen { display: block; width: 100vw; height: 100vh; touch-action: none; cursor: default; }
   #overlay {
     position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -17,7 +24,7 @@
   #overlay h1 { margin: 0; font: 400 clamp(42px, 8vw, 92px)/1 Georgia, serif; color: #ffd76a; text-shadow: 0 4px 0 #3a0608; }
   #overlay p { margin: 0; max-width: 520px; opacity: .85; }
   #overlay label { display: flex; flex-direction: column; gap: 6px; font-size: 15px; opacity: .9; }
-  #name { cursor: text; font: 700 20px system-ui, sans-serif; padding: 10px 14px; border-radius: 12px; border: 2px solid #ffd76a; background: #fff8e8; color: #3a1a08; width: min(280px, 80vw); text-align: center; }
+  #name { -webkit-user-select: text; user-select: text; cursor: text; font: 700 20px system-ui, sans-serif; padding: 10px 14px; border-radius: 12px; border: 2px solid #ffd76a; background: #fff8e8; color: #3a1a08; width: min(280px, 80vw); text-align: center; }
   #go { font: 800 24px system-ui, sans-serif; color: #fff; background: #c8102e; border: 0; border-radius: 40px; padding: 16px 44px; box-shadow: 0 6px 0 #6a0610; cursor: pointer; }
   #overlay.busy #go, #overlay.busy label { display: none; }
   #status { min-height: 1.4em; font-size: 16px; color: #ffd76a; }
@@ -28,7 +35,7 @@
 <canvas id="screen"></canvas>
 <div id="overlay">
   <h1>Alletiders Nisse</h1>
-  <p>Pyrus' julekalender – med sommerferie og halloween. Spil med musen og tastaturet.</p>
+  <p>Pyrus' julekalender – med sommerferie og halloween. Spil med mus og tastatur – eller på telefon og tablet.</p>
   <label>Dit navn (til highscorelisterne)
     <input id="name" maxlength="24" placeholder="Spiller" autocomplete="off">
   </label>

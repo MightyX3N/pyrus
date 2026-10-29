@@ -740,3 +740,15 @@ function WEB_FRAME(now, ft, mx, my)
 	xpcall(frame, report)
 	return concat(buf, SEP, 1, nb)
 end
+
+-- for the touch controls: which game is being played ("game:<n>" or "split:<n>"), and the language
+function WEB_STATE()
+	local ui = AN and AN.UI
+	local name = ui and ui.screenName or ""
+	local st = ""
+	local n = name:match("^game(%d+)$")
+	if n then st = "game:" .. n
+	elseif name == "vssplit" and ui.screen and ui.screen.n then st = "split:" .. ui.screen.n end
+	local lang = AN and AN.Save and AN.Save.Get("lang") or "da"
+	return st .. "|" .. tostring(lang)
+end

@@ -3,6 +3,7 @@
 // and this file does the browser side: the canvas, pictures, text, sound, keys, mouse and saving.
 import { Lua } from 'wasmoon-lua5.1';
 import GMOD_LUA from './gmod.lua';
+import { setupTouch } from './touch.js';
 
 const GAME = 'game/';                       // the gamemode folder, copied as it is
 const SEP = '\u0001';
@@ -381,7 +382,7 @@ function draw(cmds) {
 // starting
 // ---------------------------------------------------------------------------
 function size() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, matchMedia('(pointer: coarse)').matches ? 1.5 : 2);
   const w = Math.max(320, Math.round(window.innerWidth * dpr));
   const h = Math.max(240, Math.round(window.innerHeight * dpr));
   if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
@@ -434,6 +435,10 @@ function run() {
   const frameFn = lua.global.get('WEB_FRAME');
   const resizeFn = lua.global.get('WEB_RESIZE');
   const soundFn = lua.global.get('WEB_SOUND');
+  const stateFn = lua.global.get('WEB_STATE');
+  let gameState = '', lang = 'da';
+  const touch = setupTouch({ keyFn: lua.global.get('WEB_KEY'), state: () => gameState, lang: () => lang });
+  let frameNo = 0;
   let last = performance.now();
   function tick() {
     const now = performance.now();
@@ -454,6 +459,11 @@ function run() {
     try { cmds = frameFn(now / 1000, ft, q ? q.x : mx, q ? q.y : my); } catch (e) { console.error(e); }
     for (const m of mouseQ) { if (!m.seen) { m.seen = true; break; } }
     draw(cmds);
+    // every few frames: is a keyboard game on? (for the touch controls)
+    if (++frameNo % 10 === 0) {
+      try { const st = String(stateFn() || '|da').split('|'); gameState = st[0]; lang = st[1] || 'da'; } catch (e) { }
+      touch.update();
+    }
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);

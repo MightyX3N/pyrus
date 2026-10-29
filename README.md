@@ -26,6 +26,9 @@ The seasons are open all year.
 - **Duel** – two players on one keyboard. The keyboard games are played split screen at the same
   time (W A S D against the arrow keys); the mouse games take turns.
 - **Danish and English**, with subtitles for everything that is said.
+- **Phones and tablets** – on the website, tapping works as the mouse, and the keyboard games get
+  a stick and named buttons (one set per player in the Duel). It can be added to the home screen
+  like an app.
 
 ## Play it in Garry's Mod
 
@@ -54,6 +57,7 @@ same Lua files through a small translation layer:
   `draw`, `render`, `input`, `sound`, `file`, `net`, `vgui`, hooks and timers – on top of the
   browser. The server half of the gamemode (saving, highscores, duels) runs in the same Lua,
   talking to the client through a local `net`.
+- **`tools/src/touch.js`** adds the touch controls for phones and tablets.
 - **`tools/src/main.js`** is the browser side: it draws each frame on a canvas, loads the pictures
   and fonts, plays sound with Web Audio, passes on keys and the mouse, and keeps the saves in the
   browser.

@@ -9,7 +9,10 @@ REAL = {'bg/menu.jpg': (1920, 1080), 'ui/bordscene.png': (1500, 1193), 'ui/logo.
 def pic(p):
     im = Image.open(os.path.join(MAT, p)).convert('RGBA')
     return im.resize(REAL[p], Image.LANCZOS)   # the files are stored stretched to power-of-two sizes
+import sys
 S, B = 512, 16
+FRAME = '--noframe' not in sys.argv
+OUTS = [a for a in sys.argv[1:] if not a.startswith('--')] or [os.path.join(HERE, 'icon.jpg')]
 out = Image.new('RGBA', (S, S))
 # the attic, a little soft and warm
 bg = pic('bg/menu.jpg')
@@ -44,7 +47,15 @@ sh.putalpha(lg.getchannel('A').point(lambda a: a * 0.6))
 out.alpha_composite(sh.filter(ImageFilter.GaussianBlur(6)), ((S - lw) // 2 + 4, 30 + 8))
 out.alpha_composite(lg, ((S - lw) // 2, 30))
 # the orange frame, like the other addons
-d = ImageDraw.Draw(out)
-d.rectangle((0, 0, S - 1, S - 1), outline=(255, 122, 0, 255), width=B)
-out.convert('RGB').save(os.path.join(HERE, 'icon.jpg'), quality=92, subsampling=2)
-print('icon.jpg')
+if FRAME:
+    d = ImageDraw.Draw(out)
+    d.rectangle((0, 0, S - 1, S - 1), outline=(255, 122, 0, 255), width=B)
+for o in OUTS:
+    # name.png@size → a PNG at that size (the website's app icons); else the Workshop JPG
+    m = o.split('@')
+    img = out.convert('RGB')
+    if len(m) == 2:
+        img.resize((int(m[1]), int(m[1])), Image.LANCZOS).save(m[0])
+    else:
+        img.save(o, quality=92, subsampling=2)
+    print(m[0])
