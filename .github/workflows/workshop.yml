@@ -119,7 +119,7 @@ jobs:
           echo "STEAM_ACCOUNT=$user" >> "$GITHUB_ENV"
           out=$(./steamcmd.sh +@ShutdownOnFailedCommand 1 +login "$user" +quit 2>&1 || true)
           echo "$out" | tail -5
-          if ! echo "$out" | grep -q "Steam Public...OK\|Logged in OK\|Waiting for user info...OK"; then
+          if echo "$out" | grep -q "ERROR" || ! echo "$out" | grep -q "Waiting for user info"; then
             echo "::error::SteamCMD could not log in with STEAM_VDF – make the login file again (see the top of this file)."
             exit 1
           fi
@@ -145,7 +145,7 @@ jobs:
           cat addon.vdf
           out=$(~/steamcmd/steamcmd.sh +@ShutdownOnFailedCommand 1 +login "$STEAM_ACCOUNT" +workshop_build_item "$GITHUB_WORKSPACE/addon.vdf" +quit 2>&1 || true)
           echo "$out" | grep -v "^\s*$" | tail -25
-          if ! echo "$out" | grep -q "Success"; then echo "::error::The Workshop upload failed (see above)"; exit 1; fi
+          if echo "$out" | grep -qi "ERROR\|failure"; then echo "::error::The Workshop upload failed (see above)"; exit 1; fi
           # SteamCMD writes the item's ID back into the file
           id=$(grep -o '"publishedfileid"[[:space:]]*"[0-9]*"' addon.vdf | grep -o '[0-9]\+' | tail -1)
           [ "$id" = "0" ] && id=""
