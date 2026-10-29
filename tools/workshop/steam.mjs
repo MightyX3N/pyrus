@@ -24,7 +24,9 @@ export function call(client, method, reqType, resType, data) {
       clearTimeout(t);
       const eresult = hdr?.proto?.eresult ?? 1;
       if (eresult !== 1) return reject(new Error(`${method} failed: EResult ${eresult} ${hdr?.proto?.error_message || ''}`));
-      resolve(SteamUser._decodeProto(Schema[resType], res));
+      // (steam-user already decodes the replies it knows, like GetDetails)
+      const raw = Buffer.isBuffer(res) || res instanceof Uint8Array || (res && typeof res.toBuffer === 'function');
+      resolve(raw ? SteamUser._decodeProto(Schema[resType], res) : res);
     });
   });
 }
