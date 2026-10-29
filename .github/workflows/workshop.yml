@@ -1,63 +1,88 @@
-# Uploads the gamemode to the Garry's Mod Steam Workshop when a release is published on GitHub
-# (the release notes become the Workshop changelog). It can also be run by hand from the Actions tab.
+# Uploads a new version of the gamemode to its Steam Workshop item when a release is published on
+# GitHub; the release notes become the change note. It can also be run by hand from the Actions tab.
 #
-# Needs, in the repository's Settings → Secrets and variables → Actions:
-#   secret   STEAM_USERNAME   the Steam account that owns the Workshop item
-#   secret   STEAM_VDF        that account's SteamCMD login (config.vdf, base64)
-#   variable WORKSHOP_ID      the Workshop item's ID – leave it unset the first time, and a new item is made
+# It only ever updates the item whose ID is in tools/workshop/workshop_id.txt – it never makes a new one.
+# (The item is made once with Garry's Mod's own gmpublish, which also sets the addon type and tags;
+# run this workflow with "build" to get the .gma and preview picture for that.)
+# The title, description, picture and visibility are kept as they are on Steam.
+#
+# Needs these secrets (Settings → Secrets and variables → Actions):
+#   STEAM_USERNAME   the Steam account that owns the Workshop item
+#   STEAM_VDF        that account's SteamCMD login (config.vdf, base64)
 name: Workshop
 on:
   release:
     types: [published]
   workflow_dispatch:
     inputs:
+      mode:
+        description: 'upload: send a new version to the Workshop · build: only make the .gma to download'
+        type: choice
+        options: [upload, build]
+        default: upload
       changelog:
-        description: 'Changelog for this upload'
+        description: 'Change note (for upload)'
         required: false
         default: 'Update'
-      visibility:
-        description: 'Visibility (only used when the item is new; change it on Steam later)'
-        type: choice
-        options: [private, unlisted, friends]
-        default: private
 concurrency:
   group: workshop
   cancel-in-progress: false
 jobs:
-  upload:
+  build:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'build'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - name: Build the Workshop addon from game/
-        run: python tools/workshop/make_addon.py
-      - name: Prepare the upload
-        id: prep
-        env:
-          WORKSHOP_ID: ${{ vars.WORKSHOP_ID }}
-          VIS: ${{ inputs.visibility || 'private' }}
+        run: python3 tools/workshop/make_addon.py
+      - name: Pack it into a .gma
         run: |
-          {
-            echo 'description<<END_OF_TEXT'
-            cat tools/workshop/description.md
-            echo 'END_OF_TEXT'
-          } >> "$GITHUB_OUTPUT"
-          if [ -z "$WORKSHOP_ID" ]; then
-            # a new item: give it a title and picture, and keep it hidden until checked
-            echo "title=Alletiders Nisse" >> "$GITHUB_OUTPUT"
-            echo "icon=$GITHUB_WORKSPACE/tools/workshop/icon.jpg" >> "$GITHUB_OUTPUT"
-            case "$VIS" in friends) echo "visibility=1";; unlisted) echo "visibility=3";; *) echo "visibility=2";; esac >> "$GITHUB_OUTPUT"
+          curl -sSL -o fastgmad.zip https://github.com/WilliamVenner/fastgmad/releases/latest/download/fastgmad_linux.zip
+          unzip -q fastgmad.zip -d fastgmad && chmod +x fastgmad/fastgmad
+          mkdir -p out
+          fastgmad/fastgmad create -warninvalid -folder build/addon -out out/alletidersnisse.gma > /dev/null
+          cp tools/workshop/icon.jpg out/icon.jpg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: alletidersnisse-workshop
+          path: out/
+          compression-level: 0
+  upload:
+    if: github.event_name == 'release' || inputs.mode == 'upload'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: The Workshop item
+        id: item
+        run: |
+          id=$(tr -dc '0-9' < tools/workshop/workshop_id.txt)
+          if [ -z "$id" ]; then
+            echo "::error::No Workshop ID in tools/workshop/workshop_id.txt – make the item first (see the top of this file)."
+            exit 1
           fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+      - name: The change note (Steam only keeps plain ASCII change notes)
+        id: note
+        env:
+          NOTE: ${{ github.event.release.body || inputs.changelog || 'Update' }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os, unicodedata
+          t = os.environ.get('NOTE') or 'Update'
+          tag = os.environ.get('TAG')
+          if tag: t = tag + '\n\n' + t
+          for a, b in {'æ': 'ae', 'ø': 'oe', 'å': 'aa', 'Æ': 'Ae', 'Ø': 'Oe', 'Å': 'Aa', '–': '-', '—': '-', '’': "'", '“': '"', '”': '"'}.items():
+              t = t.replace(a, b)
+          t = unicodedata.normalize('NFKD', t).encode('ascii', 'ignore').decode()
+          print('text<<END_OF_NOTE'); print(t.strip()); print('END_OF_NOTE')
+          PY
+      - name: Build the Workshop addon from game/
+        run: python3 tools/workshop/make_addon.py
       - uses: gmod-workshop/workshop-upload@v1
         with:
           username: ${{ secrets.STEAM_USERNAME }}
           vdf: ${{ secrets.STEAM_VDF }}
-          id: ${{ vars.WORKSHOP_ID }}
+          id: ${{ steps.item.outputs.id }}
           folder: build/addon
-          title: ${{ steps.prep.outputs.title }}
-          icon: ${{ steps.prep.outputs.icon }}
-          visibility: ${{ steps.prep.outputs.visibility }}
-          markdown-description: ${{ steps.prep.outputs.description }}
-          markdown-changelog: ${{ github.event.release.body || inputs.changelog || 'Update' }}
+          markdown-changelog: ${{ steps.note.outputs.text }}
