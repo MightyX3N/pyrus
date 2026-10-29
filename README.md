@@ -27,6 +27,22 @@ The seasons are open all year.
   time (W A S D against the arrow keys); the mouse games take turns.
 - **Danish and English**, with subtitles for everything that is said.
 
+## Play it in Garry's Mod
+
+The `game/` folder in this repository is the whole gamemode, so you can play it in Garry's Mod too:
+
+1. Download the repository (**Code → Download ZIP**) and unpack it.
+2. Copy the `game` folder into `garrysmod/gamemodes/` and rename it to **`alletidersnisse`**
+   (the name matters – the gamemode finds its pictures and sounds by it).
+   On Steam that is usually `Steam/steamapps/common/GarrysMod/garrysmod/gamemodes/`.
+3. Start Garry's Mod, pick **Alletiders Nisse** in the gamemode list in the bottom right corner of
+   the main menu, and start a game on any map.
+
+In Garry's Mod you also get Kapløb, the race between several players, when you host it for friends.
+
+The gamemode will also come to the **Steam Workshop** later, so it can be installed with a single
+click.
+
 ## How it runs in the browser
 
 The website does not have its own version of the game. `game/` is the Garry's Mod gamemode folder
