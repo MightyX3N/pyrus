@@ -35,7 +35,7 @@ The `game/` folder in this repository is the whole gamemode, so you can play it 
 2. Copy the `game` folder into `garrysmod/gamemodes/` and rename it to **`alletidersnisse`**
    (the name matters – the gamemode finds its pictures and sounds by it).
    On Steam that is usually `Steam/steamapps/common/GarrysMod/garrysmod/gamemodes/`.
-3. Start Garry's Mod, pick **Alletiders Nisse** in the gamemode list in the bottom right corner of
+3. Start Garry's Mod, pick **Pyrus - Alletiders Nisse** in the gamemode list in the bottom right corner of
    the main menu, and start a game on any map.
 
 In Garry's Mod you also get Kapløb, the race between several players, when you host it for friends.

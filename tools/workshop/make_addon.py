@@ -39,5 +39,5 @@ for part, exts in ALLOWED.items():
                 print('left out (not allowed on the Workshop):', os.path.join(root, f))
 
 with open(os.path.join(OUT, 'addon.json'), 'w') as fh:
-    json.dump({'title': 'Alletiders Nisse', 'type': 'gamemode', 'tags': ['fun', 'cartoon'], 'ignore': []}, fh, indent=1)
+    json.dump({'title': 'Pyrus - Alletiders Nisse', 'type': 'gamemode', 'tags': ['fun', 'cartoon'], 'ignore': []}, fh, indent=1)
 print(f'addon built in build/addon: the gamemode + {n} content files')

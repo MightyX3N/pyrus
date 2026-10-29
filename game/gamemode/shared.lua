@@ -1,4 +1,4 @@
-GM.Name    = "Alletiders Nisse"
+GM.Name    = "Pyrus - Alletiders Nisse"
 GM.Author  = "Fan remake"
 GM.Email   = ""
 GM.Website = ""
