@@ -91,22 +91,62 @@ jobs:
           PY
       - name: Build the Workshop addon from game/
         run: python3 tools/workshop/make_addon.py
+      - name: Pack it into a .gma
+        run: |
+          curl -sSL -o fastgmad.zip https://github.com/WilliamVenner/fastgmad/releases/latest/download/fastgmad_linux.zip
+          unzip -q fastgmad.zip -d fastgmad && chmod +x fastgmad/fastgmad
+          mkdir -p upload
+          fastgmad/fastgmad create -warninvalid -folder build/addon -out upload/alletidersnisse.gma > /dev/null
+          ls -la upload
+      - name: Get SteamCMD and log in with the saved login
+        env:
+          STEAM_VDF: ${{ secrets.STEAM_VDF }}
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+        run: |
+          sudo dpkg --add-architecture i386 >/dev/null
+          sudo apt-get -qq update >/dev/null && sudo apt-get -qq install -y lib32gcc-s1 >/dev/null
+          mkdir -p ~/steamcmd && cd ~/steamcmd
+          curl -sSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar zxf -
+          ./steamcmd.sh +quit > /dev/null || true
+          for d in ~/Steam/config ~/steamcmd/config; do mkdir -p "$d"; echo "$STEAM_VDF" | base64 -d > "$d/config.vdf"; done
+          out=$(./steamcmd.sh +@ShutdownOnFailedCommand 1 +login "$STEAM_USERNAME" +quit 2>&1 || true)
+          echo "$out" | tail -5
+          if ! echo "$out" | grep -q "Steam Public...OK\|Logged in OK\|Waiting for user info...OK"; then
+            echo "::error::SteamCMD could not log in with STEAM_VDF – make the login file again (see the top of this file)."
+            exit 1
+          fi
       - name: Upload it (SteamCMD)
-        uses: gmod-workshop/workshop-upload@abf7dd8f90a29039627e1278508531957fe5b708 # v1.1.0 (the v1 tag is older and lacks visibility and markdown-changelog)
-        with:
-          username: ${{ secrets.STEAM_USERNAME }}
-          vdf: ${{ secrets.STEAM_VDF }}
-          id: ${{ steps.item.outputs.id }}
-          folder: build/addon
-          # only used when a new item is made:
-          title: ${{ steps.item.outputs.id == '' && 'Alletiders Nisse' || '' }}
-          icon: ${{ steps.item.outputs.id == '' && format('{0}/tools/workshop/icon.jpg', github.workspace) || '' }}
-          visibility: ${{ steps.item.outputs.id == '' && '2' || '' }}
-          markdown-changelog: ${{ steps.note.outputs.text }}
+        id: upload
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          ID: ${{ steps.item.outputs.id }}
+          NOTE: ${{ steps.note.outputs.text }}
+        run: |
+          python3 - <<'PY'
+          import os
+          ws = os.environ['GITHUB_WORKSPACE']
+          q = lambda s: s.replace('\\', '/').replace('"', "'")
+          f = {'appid': '4000', 'publishedfileid': os.environ.get('ID') or '0',
+               'contentfolder': ws + '/upload', 'changenote': q(os.environ.get('NOTE') or 'Update')}
+          if not os.environ.get('ID'):
+              # a new item: a title, the picture, and hidden until it has been checked
+              f.update({'title': 'Alletiders Nisse', 'previewfile': ws + '/tools/workshop/icon.jpg', 'visibility': '2'})
+          body = ''.join(f'\t"{k}" "{v}"\n' for k, v in f.items())
+          open(ws + '/addon.vdf', 'w').write('"workshopitem"\n{\n' + body + '}\n')
+          PY
+          cat addon.vdf
+          out=$(~/steamcmd/steamcmd.sh +@ShutdownOnFailedCommand 1 +login "$STEAM_USERNAME" +workshop_build_item "$GITHUB_WORKSPACE/addon.vdf" +quit 2>&1 || true)
+          echo "$out" | grep -v "^\s*$" | tail -25
+          if ! echo "$out" | grep -q "Success"; then echo "::error::The Workshop upload failed (see above)"; exit 1; fi
+          # SteamCMD writes the item's ID back into the file
+          id=$(grep -o '"publishedfileid"[[:space:]]*"[0-9]*"' addon.vdf | grep -o '[0-9]\+' | tail -1)
+          [ "$id" = "0" ] && id=""
+          echo "Workshop item: $id"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
       - name: Set the addon type, tags, title and description
         env:
           STEAM_REFRESH_TOKEN: ${{ secrets.STEAM_REFRESH_TOKEN }}
-          ID: ${{ steps.item.outputs.id }}
+          ID: ${{ steps.upload.outputs.id || steps.item.outputs.id }}
         run: |
           id="$ID"
           if [ -z "$id" ]; then id=$(node tools/workshop/update.mjs find | tr -dc '0-9'); fi
