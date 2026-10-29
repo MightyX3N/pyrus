@@ -1,0 +1,63 @@
+# Uploads the gamemode to the Garry's Mod Steam Workshop when a release is published on GitHub
+# (the release notes become the Workshop changelog). It can also be run by hand from the Actions tab.
+#
+# Needs, in the repository's Settings → Secrets and variables → Actions:
+#   secret   STEAM_USERNAME   the Steam account that owns the Workshop item
+#   secret   STEAM_VDF        that account's SteamCMD login (config.vdf, base64)
+#   variable WORKSHOP_ID      the Workshop item's ID – leave it unset the first time, and a new item is made
+name: Workshop
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      changelog:
+        description: 'Changelog for this upload'
+        required: false
+        default: 'Update'
+      visibility:
+        description: 'Visibility (only used when the item is new; change it on Steam later)'
+        type: choice
+        options: [private, unlisted, friends]
+        default: private
+concurrency:
+  group: workshop
+  cancel-in-progress: false
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build the Workshop addon from game/
+        run: python tools/workshop/make_addon.py
+      - name: Prepare the upload
+        id: prep
+        env:
+          WORKSHOP_ID: ${{ vars.WORKSHOP_ID }}
+          VIS: ${{ inputs.visibility || 'private' }}
+        run: |
+          {
+            echo 'description<<END_OF_TEXT'
+            cat tools/workshop/description.md
+            echo 'END_OF_TEXT'
+          } >> "$GITHUB_OUTPUT"
+          if [ -z "$WORKSHOP_ID" ]; then
+            # a new item: give it a title and picture, and keep it hidden until checked
+            echo "title=Alletiders Nisse" >> "$GITHUB_OUTPUT"
+            echo "icon=$GITHUB_WORKSPACE/tools/workshop/icon.jpg" >> "$GITHUB_OUTPUT"
+            case "$VIS" in friends) echo "visibility=1";; unlisted) echo "visibility=3";; *) echo "visibility=2";; esac >> "$GITHUB_OUTPUT"
+          fi
+      - uses: gmod-workshop/workshop-upload@v1
+        with:
+          username: ${{ secrets.STEAM_USERNAME }}
+          vdf: ${{ secrets.STEAM_VDF }}
+          id: ${{ vars.WORKSHOP_ID }}
+          folder: build/addon
+          title: ${{ steps.prep.outputs.title }}
+          icon: ${{ steps.prep.outputs.icon }}
+          visibility: ${{ steps.prep.outputs.visibility }}
+          markdown-description: ${{ steps.prep.outputs.description }}
+          markdown-changelog: ${{ github.event.release.body || inputs.changelog || 'Update' }}

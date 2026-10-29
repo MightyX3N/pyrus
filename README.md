@@ -68,8 +68,10 @@ the site is just a matter of updating `game/`.
 | `game/` | The Garry's Mod gamemode, unchanged |
 | `game/lua.json`, `game/manifest.json` | Generated lists of the gamemode's Lua files and picture sizes |
 | `tools/` | The translation layer's source, and the script that makes the lists |
+| `tools/workshop/` | The Steam Workshop packaging: description, preview picture and the addon builder |
 | `runtime/` | The built translation layer and the Lua engine |
 | `.github/workflows/pages.yml` | Builds and publishes the site on every push |
+| `.github/workflows/workshop.yml` | Uploads the gamemode to the Steam Workshop for every GitHub release |
 
 ## Not on the website
 
