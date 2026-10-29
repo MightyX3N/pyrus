@@ -109,7 +109,13 @@ jobs:
           curl -sSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar zxf -
           ./steamcmd.sh +quit > /dev/null || true
           for d in ~/Steam/config ~/steamcmd/config; do mkdir -p "$d"; echo "$STEAM_VDF" | base64 -d > "$d/config.vdf"; done
-          out=$(./steamcmd.sh +@ShutdownOnFailedCommand 1 +login "$STEAM_USERNAME" +quit 2>&1 || true)
+          # the account name is in the login file itself (under "Accounts"); the secret is only a fallback
+          user=$(python3 -c "import re,sys; t=open(sys.argv[1],encoding='utf-8',errors='replace').read(); m=re.search(r'\"Accounts\"\s*\{\s*\"([^\"]+)\"', t, re.I); print(m.group(1) if m else '')" ~/Steam/config/config.vdf)
+          [ -z "$user" ] && user="$STEAM_USERNAME"
+          if [ -z "$user" ]; then echo "::error::No Steam account name: STEAM_VDF has no account in it and STEAM_USERNAME is empty."; exit 1; fi
+          echo "::add-mask::$user"
+          echo "STEAM_ACCOUNT=$user" >> "$GITHUB_ENV"
+          out=$(./steamcmd.sh +@ShutdownOnFailedCommand 1 +login "$user" +quit 2>&1 || true)
           echo "$out" | tail -5
           if ! echo "$out" | grep -q "Steam Public...OK\|Logged in OK\|Waiting for user info...OK"; then
             echo "::error::SteamCMD could not log in with STEAM_VDF – make the login file again (see the top of this file)."
@@ -135,7 +141,7 @@ jobs:
           open(ws + '/addon.vdf', 'w').write('"workshopitem"\n{\n' + body + '}\n')
           PY
           cat addon.vdf
-          out=$(~/steamcmd/steamcmd.sh +@ShutdownOnFailedCommand 1 +login "$STEAM_USERNAME" +workshop_build_item "$GITHUB_WORKSPACE/addon.vdf" +quit 2>&1 || true)
+          out=$(~/steamcmd/steamcmd.sh +@ShutdownOnFailedCommand 1 +login "$STEAM_ACCOUNT" +workshop_build_item "$GITHUB_WORKSPACE/addon.vdf" +quit 2>&1 || true)
           echo "$out" | grep -v "^\s*$" | tail -25
           if ! echo "$out" | grep -q "Success"; then echo "::error::The Workshop upload failed (see above)"; exit 1; fi
           # SteamCMD writes the item's ID back into the file
