@@ -1,0 +1,12 @@
+"alletidersnisse"
+{
+	"base"			"base"
+	"title"			"Alletiders Nisse"
+	"category"		"other"
+	"menusystem"	"1"
+	"maps"			""
+	"workshopid"	""
+	"settings"
+	{
+	}
+}

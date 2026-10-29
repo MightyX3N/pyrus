@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alletiders Nisse</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #screen { display: block; width: 100vw; height: 100vh; touch-action: none; cursor: default; }
+  #overlay {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 22px; padding: 16px; box-sizing: border-box; cursor: pointer; text-align: center;
+    background: radial-gradient(ellipse at 50% 35%, #8a1a20 0%, #4a0c10 55%, #1a0406 100%);
+    color: #fff1cf; font: 700 18px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  #overlay h1 { margin: 0; font: 400 clamp(42px, 8vw, 92px)/1 Georgia, serif; color: #ffd76a; text-shadow: 0 4px 0 #3a0608; }
+  #overlay p { margin: 0; max-width: 520px; opacity: .85; }
+  #overlay label { display: flex; flex-direction: column; gap: 6px; font-size: 15px; opacity: .9; }
+  #name { cursor: text; font: 700 20px system-ui, sans-serif; padding: 10px 14px; border-radius: 12px; border: 2px solid #ffd76a; background: #fff8e8; color: #3a1a08; width: min(280px, 80vw); text-align: center; }
+  #go { font: 800 24px system-ui, sans-serif; color: #fff; background: #c8102e; border: 0; border-radius: 40px; padding: 16px 44px; box-shadow: 0 6px 0 #6a0610; cursor: pointer; }
+  #overlay.busy #go, #overlay.busy label { display: none; }
+  #status { min-height: 1.4em; font-size: 16px; color: #ffd76a; }
+  #small { position: fixed; bottom: 10px; left: 0; right: 0; font-size: 12px; opacity: .55; }
+</style>
+</head>
+<body>
+<canvas id="screen"></canvas>
+<div id="overlay">
+  <h1>Alletiders Nisse</h1>
+  <p>Pyrus' julekalender – med sommerferie og halloween. Spil med musen og tastaturet.</p>
+  <label>Dit navn (til highscorelisterne)
+    <input id="name" maxlength="24" placeholder="Spiller" autocomplete="off">
+  </label>
+  <button id="go">Klik for at starte</button>
+  <div id="status"></div>
+  <div id="small">Første gang hentes spillets billeder og lyde undervejs, så det kan tage et øjeblik.</div>
+</div>
+<script type="module" src="runtime/app.js"></script>
+</body>
+</html>
