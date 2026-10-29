@@ -1,56 +1,69 @@
-# Alletiders Nisse – på nettet
+# Alletiders Nisse
 
-A fan remake of Pyrus' *Alletiders Nisse* (originally a Garry's Mod gamemode), playable in the browser.
+**Play it at [pyrus.lol](https://pyrus.lol)**
 
-## How it works
+A fan remake of *Alletiders Nisse*, the Pyrus Christmas calendar CD-ROM, built as a Garry's Mod
+gamemode and playable straight in the browser.
 
-The Garry's Mod gamemode in `game/` is **exactly the same folder** as in
-`garrysmod/gamemodes/alletidersnisse` – nothing in it is changed for the website.
-The website runs it through a translation layer:
+Pyrus and Gyldenkål are back in the attic: open a door in the calendar every day in December,
+play the day's game, earn pebernødder and decorate the tree with what you buy in Pyntekassen.
+The seasons are open all year.
 
-- `runtime/liblua5.1.wasm` – a real Lua 5.1 (the gamemode's Lua files run in it)
-- `tools/src/gmod.lua` – the Garry's Mod functions the gamemode uses (surface, draw, sound, input, file, net, vgui …), made on top of the browser
-- `tools/src/main.js` – the browser side: canvas drawing, pictures, fonts, Web Audio, keys and mouse, saving in the browser (localStorage)
+## What's in it
 
-Single player, the same-keyboard Duel and split screen all work. Kapløb (several players on a server) does not.
+- **The Christmas calendar** – all 24 door games, remade from the original: Op og Hop,
+  Bibliote-Kandis, Huskespil, Gåseflyvning, Kæmpe Kålkamp, Skubbespil, Kærlighedsflugten, Rumtur,
+  Kriblekrable-ord, Pyntekassen and the rest, with the original voices, music and sound.
+- **Two looks** – a modern, cleaned-up interface, or *classic*, which follows the CD-ROM's own
+  screens and layout.
+- **Pyntekassen and the Scrapbog** – spend pebernødder on decorations, and look back at pictures,
+  trophies and highscores.
+- **Summer holiday** – a beach to explore with Surfing, Is-tårnet, Fiskekonkurrencen and Sandslottet.
+- **Halloween** – a haunted house with Græskarskæring, Spøgelsesjagt, Slik eller ballade and
+  Spøgelseslabyrinten.
+- **Difficulties and trophies** – every season game has Easy, Normal and Hard, a highscore list for
+  each, and bronze, silver and gold trophies.
+- **Duel** – two players on one keyboard. The keyboard games are played split screen at the same
+  time (W A S D against the arrow keys); the mouse games take turns.
+- **Danish and English**, with subtitles for everything that is said.
 
-## Updating the game
+## How it runs in the browser
 
-1. Copy the gamemode folder (`garrysmod/gamemodes/alletidersnisse`) over `game/` in this repository.
-2. Push. The GitHub Action (`.github/workflows/pages.yml`) builds and publishes the site by itself.
+The website does not have its own version of the game. `game/` is the Garry's Mod gamemode folder
+exactly as it is installed in `garrysmod/gamemodes/alletidersnisse`, and the browser runs those
+same Lua files through a small translation layer:
 
-## Changing the translation layer
+- **Lua 5.1 in WebAssembly** runs the gamemode's code unchanged.
+- **`tools/src/gmod.lua`** recreates the parts of Garry's Mod the gamemode uses – `surface`,
+  `draw`, `render`, `input`, `sound`, `file`, `net`, `vgui`, hooks and timers – on top of the
+  browser. The server half of the gamemode (saving, highscores, duels) runs in the same Lua,
+  talking to the client through a local `net`.
+- **`tools/src/main.js`** is the browser side: it draws each frame on a canvas, loads the pictures
+  and fonts, plays sound with Web Audio, passes on keys and the mouse, and keeps the saves in the
+  browser.
 
-Edit `tools/src/`. To try it locally:
+Because of this, the Garry's Mod version and the website are always the same game, and updating
+the site is just a matter of updating `game/`.
 
-```
-cd tools && npm ci && npm run build && cd ..
-pip install pillow && python tools/make_lists.py
-python -m http.server
-```
+## Layout
 
-…and open http://localhost:8000.
+| Path | What it is |
+|---|---|
+| `game/` | The Garry's Mod gamemode, unchanged |
+| `game/lua.json`, `game/manifest.json` | Generated lists of the gamemode's Lua files and picture sizes |
+| `tools/` | The translation layer's source, and the script that makes the lists |
+| `runtime/` | The built translation layer and the Lua engine |
+| `.github/workflows/pages.yml` | Builds and publishes the site on every push |
 
-## First-time setup on GitHub
+## Not on the website
 
-Settings → Pages → Build and deployment → Source: **GitHub Actions**.
+Kapløb, the race between several players on a server, needs Garry's Mod multiplayer and is only
+in the gamemode.
 
-## The domain: pyrus.lol
+## Credits
 
-At the domain registrar (DNS):
+*Alletiders Nisse* and Pyrus belong to their original creators (TV 2 and the team behind Pyrus),
+as do the characters, voices, music and original artwork. This is an unofficial, non-commercial fan project made
+out of love for the original, and it is not affiliated with or endorsed by them.
 
-| Type | Name | Value |
-|---|---|---|
-| A | @ | 185.199.108.153 |
-| A | @ | 185.199.109.153 |
-| A | @ | 185.199.110.153 |
-| A | @ | 185.199.111.153 |
-| AAAA | @ | 2606:50c0:8000::153 |
-| AAAA | @ | 2606:50c0:8001::153 |
-| AAAA | @ | 2606:50c0:8002::153 |
-| AAAA | @ | 2606:50c0:8003::153 |
-| CNAME | www | YOUR-GITHUB-NAME.github.io |
-
-On GitHub: first verify the domain (your profile Settings → Pages → Add a domain), then in this
-repository Settings → Pages → Custom domain: `pyrus.lol`, and when it offers it, tick *Enforce HTTPS*.
-(With the Actions workflow no CNAME file is needed.)
+The Lua engine is [wasmoon-lua5.1](https://github.com/JX3BOX/wasmoon-lua5.1) (MIT).
