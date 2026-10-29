@@ -752,3 +752,12 @@ function WEB_STATE()
 	local lang = AN and AN.Save and AN.Save.Get("lang") or "da"
 	return st .. "|" .. tostring(lang)
 end
+
+-- the language chosen on the website's start page
+function WEB_SETLANG(l)
+	if not (AN and AN.Save) then return end
+	if AN.Save.Get("lang") ~= l then
+		AN.Save.Set("lang", l)
+		if AN.UI and AN.UI.screenName == "main" then AN.UI.Open("main") end
+	end
+end

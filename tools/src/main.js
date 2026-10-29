@@ -13,6 +13,33 @@ const overlay = document.getElementById('overlay');
 const statusEl = document.getElementById('status');
 let manifest, luaFiles, lua;
 
+// the language: what was chosen before, else the browser's (Danish for Danish browsers, English otherwise)
+const TEXT = {
+  da: { intro: "Pyrus' julekalender – med sommerferie og halloween. Spil med mus og tastatur – eller på telefon og tablet.",
+    name: 'Dit navn (til highscorelisterne)', go: 'Klik for at starte', player: 'Spiller',
+    small: 'Første gang hentes spillets billeder og lyde undervejs, så det kan tage et øjeblik.',
+    loading: 'Henter spillet…', fonts: 'Henter skrifttyper…', lua: 'Starter Lua…', starting: 'Starter spillet…', failed: 'Noget gik galt: ' },
+  en: { intro: "Pyrus' Christmas calendar – with summer holiday and Halloween. Play with mouse and keyboard – or on a phone or tablet.",
+    name: 'Your name (for the highscore lists)', go: 'Click to start', player: 'Player',
+    small: "The first time, the game's pictures and sounds are fetched as you go, so it can take a moment.",
+    loading: 'Fetching the game…', fonts: 'Fetching fonts…', lua: 'Starting Lua…', starting: 'Starting the game…', failed: 'Something went wrong: ' },
+};
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+let LANG = store('an_lang') || ((navigator.languages || [navigator.language || '']).some(l => /^(da|nb|nn|no)\b/i.test(l)) ? 'da' : 'en');
+if (!TEXT[LANG]) LANG = 'en';
+function T(k) { return TEXT[LANG][k]; }
+function applyLang() {
+  document.documentElement.lang = LANG;
+  for (const el of document.querySelectorAll('[data-t]')) el.textContent = T(el.dataset.t);
+  const nm = document.getElementById('name');
+  if (nm) nm.placeholder = T('player');
+  for (const b of document.querySelectorAll('#langs button')) b.classList.toggle('on', b.dataset.lang === LANG);
+}
+for (const b of document.querySelectorAll('#langs button')) {
+  b.addEventListener('click', e => { e.stopPropagation(); LANG = b.dataset.lang; store('an_lang', LANG); applyLang(); });
+}
+applyLang();
+
 function status(t) { if (statusEl) statusEl.textContent = t; }
 
 // ---------------------------------------------------------------------------
@@ -390,15 +417,15 @@ function size() {
 }
 
 async function boot() {
-  status('Henter spillet…');
+  status(T('loading'));
   const [man, files] = await Promise.all([
     fetch(GAME + 'manifest.json').then(r => r.json()),
     fetch(GAME + 'lua.json').then(r => r.json()),
   ]);
   manifest = man; luaFiles = files;
-  status('Henter skrifttyper…');
+  status(T('fonts'));
   await loadFonts();
-  status('Starter Lua…');
+  status(T('lua'));
   lua = await Lua.create({ customWasmUri: 'runtime/liblua5.1.wasm' });
   const G = lua.global;
   G.set('JS_log', (kind, s) => (kind === 'error' ? console.error : console.log)('[lua]', s));
@@ -419,14 +446,15 @@ async function boot() {
   });
   G.set('JS_sndopen', (p, flags) => sndOpen(p, flags));
   G.set('JS_snd', (id, op, v) => snd(id, op, v));
-  G.set('JS_name', () => localStorage.getItem('an_name') || 'Spiller');
+  G.set('JS_name', () => localStorage.getItem('an_name') || T('player'));
   G.set('JS_openurl', u => window.open(u, '_blank', 'noopener'));
   G.set('JS_quit', () => location.reload());
   lua.doStringSync(GMOD_LUA);
   window.GMLUA = lua;
   const [w, h] = size();
-  status('Starter spillet…');
+  status(T('starting'));
   lua.global.get('WEB_START')(w, h);
+  lua.global.get('WEB_SETLANG')(LANG);
   hookInput();
   run();
 }
@@ -461,7 +489,7 @@ function run() {
     draw(cmds);
     // every few frames: is a keyboard game on? (for the touch controls)
     if (++frameNo % 10 === 0) {
-      try { const st = String(stateFn() || '|da').split('|'); gameState = st[0]; lang = st[1] || 'da'; } catch (e) { }
+      try { const st = String(stateFn() || '|da').split('|'); gameState = st[0]; lang = st[1] || 'da'; if (TEXT[lang] && lang !== LANG) { LANG = lang; store('an_lang', LANG); } } catch (e) { }
       touch.update();
     }
     requestAnimationFrame(tick);
@@ -478,7 +506,7 @@ overlay.addEventListener('click', () => {
   if (name && name.value.trim()) localStorage.setItem('an_name', name.value.trim().slice(0, 24));
   audio().resume();
   overlay.classList.add('busy');
-  boot().then(() => overlay.remove()).catch(e => { console.error(e); started = false; overlay.classList.remove('busy'); status('Noget gik galt: ' + e.message); });
+  boot().then(() => overlay.remove()).catch(e => { console.error(e); started = false; overlay.classList.remove('busy'); status(T('failed') + e.message); });
 }, { once: false });
 document.getElementById('name')?.addEventListener('click', e => e.stopPropagation());
 const nm = document.getElementById('name');

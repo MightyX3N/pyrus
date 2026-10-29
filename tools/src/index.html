@@ -27,6 +27,9 @@
   #name { -webkit-user-select: text; user-select: text; cursor: text; font: 700 20px system-ui, sans-serif; padding: 10px 14px; border-radius: 12px; border: 2px solid #ffd76a; background: #fff8e8; color: #3a1a08; width: min(280px, 80vw); text-align: center; }
   #go { font: 800 24px system-ui, sans-serif; color: #fff; background: #c8102e; border: 0; border-radius: 40px; padding: 16px 44px; box-shadow: 0 6px 0 #6a0610; cursor: pointer; }
   #overlay.busy #go, #overlay.busy label { display: none; }
+  #langs { position: absolute; top: 14px; right: 14px; display: flex; gap: 6px; }
+  #langs button { cursor: pointer; font: 800 15px system-ui, sans-serif; color: #fff1cf; background: rgba(0,0,0,.25); border: 2px solid rgba(255,215,106,.5); border-radius: 20px; padding: 7px 14px; }
+  #langs button.on { background: #ffd76a; color: #3a0608; border-color: #ffd76a; }
   #status { min-height: 1.4em; font-size: 16px; color: #ffd76a; }
   #small { position: fixed; bottom: 10px; left: 0; right: 0; font-size: 12px; opacity: .55; }
 </style>
@@ -34,14 +37,15 @@
 <body>
 <canvas id="screen"></canvas>
 <div id="overlay">
+  <div id="langs"><button data-lang="da">Dansk</button><button data-lang="en">English</button></div>
   <h1>Alletiders Nisse</h1>
-  <p>Pyrus' julekalender – med sommerferie og halloween. Spil med mus og tastatur – eller på telefon og tablet.</p>
-  <label>Dit navn (til highscorelisterne)
+  <p data-t="intro">Pyrus' julekalender – med sommerferie og halloween. Spil med mus og tastatur – eller på telefon og tablet.</p>
+  <label><span data-t="name">Dit navn (til highscorelisterne)</span>
     <input id="name" maxlength="24" placeholder="Spiller" autocomplete="off">
   </label>
-  <button id="go">Klik for at starte</button>
+  <button id="go" data-t="go">Klik for at starte</button>
   <div id="status"></div>
-  <div id="small">Første gang hentes spillets billeder og lyde undervejs, så det kan tage et øjeblik.</div>
+  <div id="small" data-t="small">Første gang hentes spillets billeder og lyde undervejs, så det kan tage et øjeblik.</div>
 </div>
 <script type="module" src="runtime/app.js"></script>
 </body>
