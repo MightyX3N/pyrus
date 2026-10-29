@@ -109,6 +109,8 @@ jobs:
           curl -sSL https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz | tar zxf -
           ./steamcmd.sh +quit > /dev/null || true
           for d in ~/Steam/config ~/steamcmd/config; do mkdir -p "$d"; echo "$STEAM_VDF" | base64 -d > "$d/config.vdf"; done
+          size=$(stat -c %s ~/Steam/config/config.vdf)
+          echo "::warning::Check: STEAM_VDF secret is ${#STEAM_VDF} characters, decodes to $size bytes; Accounts in it: $(grep -c '"Accounts"' ~/Steam/config/config.vdf), ConnectCache in it: $(grep -c '"ConnectCache"' ~/Steam/config/config.vdf); STEAM_USERNAME is ${#STEAM_USERNAME} characters"
           # the account name is in the login file itself (under "Accounts"); the secret is only a fallback
           user=$(python3 -c "import re,sys; t=open(sys.argv[1],encoding='utf-8',errors='replace').read(); m=re.search(r'\"Accounts\"\s*\{\s*\"([^\"]+)\"', t, re.I); print(m.group(1) if m else '')" ~/Steam/config/config.vdf)
           [ -z "$user" ] && user="$STEAM_USERNAME"
