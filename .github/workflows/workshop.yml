@@ -1,14 +1,16 @@
 # Uploads a new version of the gamemode to its Steam Workshop item when a release is published on
 # GitHub; the release notes become the change note. It can also be run by hand from the Actions tab.
 #
-# It only ever updates the item whose ID is in tools/workshop/workshop_id.txt – it never makes a new one.
-# (The item is made once with Garry's Mod's own gmpublish, which also sets the addon type and tags;
-# run this workflow with "build" to get the .gma and preview picture for that.)
-# The title, description, picture and visibility are kept as they are on Steam.
+# The first time (no ID in tools/workshop/workshop_id.txt) it uses the newest of your Workshop items
+# called "Alletiders Nisse", or makes a new hidden one, and saves its ID in the repository.
+# Every upload then also sets the addon type and tags, the title and the description from
+# tools/workshop/ (workshop.json and description.bbcode) – SteamCMD can't, so that part logs in like
+# the Steam client does. The picture and visibility are left as they are on Steam.
 #
 # Needs these secrets (Settings → Secrets and variables → Actions):
-#   STEAM_USERNAME   the Steam account that owns the Workshop item
-#   STEAM_VDF        that account's SteamCMD login (config.vdf, base64)
+#   STEAM_USERNAME        the Steam account that owns the Workshop item
+#   STEAM_VDF             that account's SteamCMD login (config.vdf, base64)
+#   STEAM_REFRESH_TOKEN   that account's Steam client login token (make it with tools/workshop/login.mjs)
 name: Workshop
 on:
   release:
@@ -50,15 +52,25 @@ jobs:
   upload:
     if: github.event_name == 'release' || inputs.mode == 'upload'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Get the Steam client tools
+        working-directory: tools/workshop
+        run: npm install --no-audit --no-fund
       - name: The Workshop item
         id: item
+        env:
+          STEAM_REFRESH_TOKEN: ${{ secrets.STEAM_REFRESH_TOKEN }}
         run: |
           id=$(tr -dc '0-9' < tools/workshop/workshop_id.txt)
           if [ -z "$id" ]; then
-            echo "::error::No Workshop ID in tools/workshop/workshop_id.txt – make the item first (see the top of this file)."
-            exit 1
+            id=$(node tools/workshop/update.mjs find)
+            if [ -n "$id" ]; then echo "Using the existing item $id"; else echo "No item yet – making a new hidden one"; fi
           fi
           echo "id=$id" >> "$GITHUB_OUTPUT"
       - name: The change note (Steam only keeps plain ASCII change notes)
@@ -79,10 +91,34 @@ jobs:
           PY
       - name: Build the Workshop addon from game/
         run: python3 tools/workshop/make_addon.py
-      - uses: gmod-workshop/workshop-upload@v1
+      - name: Upload it (SteamCMD)
+        uses: gmod-workshop/workshop-upload@v1
         with:
           username: ${{ secrets.STEAM_USERNAME }}
           vdf: ${{ secrets.STEAM_VDF }}
           id: ${{ steps.item.outputs.id }}
           folder: build/addon
+          # only used when a new item is made:
+          title: ${{ steps.item.outputs.id == '' && 'Alletiders Nisse' || '' }}
+          icon: ${{ steps.item.outputs.id == '' && format('{0}/tools/workshop/icon.jpg', github.workspace) || '' }}
+          visibility: ${{ steps.item.outputs.id == '' && '2' || '' }}
           markdown-changelog: ${{ steps.note.outputs.text }}
+      - name: Set the addon type, tags, title and description
+        env:
+          STEAM_REFRESH_TOKEN: ${{ secrets.STEAM_REFRESH_TOKEN }}
+          ID: ${{ steps.item.outputs.id }}
+        run: |
+          id="$ID"
+          if [ -z "$id" ]; then id=$(node tools/workshop/update.mjs find); fi
+          if [ -z "$id" ]; then echo "::error::Could not find the new Workshop item"; exit 1; fi
+          node tools/workshop/update.mjs "$id"
+          echo "$id" > tools/workshop/workshop_id.txt
+      - name: Save the item's ID in the repository
+        run: |
+          if ! git diff --quiet -- tools/workshop/workshop_id.txt; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add tools/workshop/workshop_id.txt
+            git commit -m "Workshop item ID [skip ci]"
+            git pull --rebase origin main && git push origin HEAD:main
+          fi
