@@ -419,8 +419,8 @@ function size() {
 async function boot() {
   status(T('loading'));
   const [man, files] = await Promise.all([
-    fetch(GAME + 'manifest.json').then(r => r.json()),
-    fetch(GAME + 'lua.json').then(r => r.json()),
+    fetch(GAME + 'manifest.json', { cache: 'no-cache' }).then(r => r.json()),
+    fetch(GAME + 'lua.json', { cache: 'no-cache' }).then(r => r.json()),
   ]);
   manifest = man; luaFiles = files;
   status(T('fonts'));
@@ -499,7 +499,8 @@ function run() {
 
 // the browser only lets a page play sound after a click, so the game starts with one
 let started = false;
-overlay.addEventListener('click', () => {
+// starting: the button, or Enter in the name field (the rest of the page is just the page)
+function start() {
   if (started) return;
   started = true;
   const name = document.getElementById('name');
@@ -507,7 +508,8 @@ overlay.addEventListener('click', () => {
   audio().resume();
   overlay.classList.add('busy');
   boot().then(() => overlay.remove()).catch(e => { console.error(e); started = false; overlay.classList.remove('busy'); status(T('failed') + e.message); });
-}, { once: false });
-document.getElementById('name')?.addEventListener('click', e => e.stopPropagation());
+}
+document.getElementById('go').addEventListener('click', start);
+document.getElementById('name')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); start(); } });
 const nm = document.getElementById('name');
 if (nm) nm.value = localStorage.getItem('an_name') || '';

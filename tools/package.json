@@ -3,7 +3,7 @@
   "private": true,
   "description": "The website's translation layer: runs the Garry's Mod gamemode in the browser",
   "scripts": {
-    "build": "esbuild src/main.js --bundle --format=esm --minify --loader:.lua=text --platform=browser --external:node:* --outfile=../runtime/app.js && node -e \"const f=require('fs');f.mkdirSync('../runtime',{recursive:true});f.copyFileSync('node_modules/wasmoon-lua5.1/dist/liblua5.1.wasm','../runtime/liblua5.1.wasm');f.copyFileSync('src/index.html','../index.html')\""
+    "build": "esbuild src/main.js --bundle --format=esm --minify --loader:.lua=text --platform=browser --external:node:* --outfile=../runtime/app.js && node -e \"const f=require('fs');f.mkdirSync('../runtime',{recursive:true});f.copyFileSync('node_modules/wasmoon-lua5.1/dist/liblua5.1.wasm','../runtime/liblua5.1.wasm');f.writeFileSync('../index.html',f.readFileSync('src/index.html','utf8').replace('runtime/app.js','runtime/app.js?v='+Date.now().toString(36)))\""
   },
   "devDependencies": {
     "esbuild": "0.24.2",
