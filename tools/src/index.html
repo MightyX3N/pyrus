@@ -29,6 +29,15 @@
   #name { -webkit-user-select: text; user-select: text; cursor: text; font: 700 20px system-ui, sans-serif; padding: 10px 14px; border-radius: 12px; border: 2px solid #ffd76a; background: #fff8e8; color: #3a1a08; width: min(280px, 80vw); text-align: center; }
   #go { font: 800 24px system-ui, sans-serif; color: #fff; background: #c8102e; border: 0; border-radius: 40px; padding: 16px 44px; box-shadow: 0 6px 0 #6a0610; cursor: pointer; }
   #overlay.busy #go, #overlay.busy label { display: none; }
+  #players { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: min(640px, 92vw); }
+  #players:empty { display: none; }
+  #players .lbl { width: 100%; font-size: 14px; opacity: .8; }
+  .pl { display: flex; align-items: center; gap: 2px; border-radius: 20px; background: rgba(0,0,0,.25); border: 2px solid rgba(255,215,106,.45); }
+  .pl.on { background: rgba(255,215,106,.25); border-color: #ffd76a; }
+  .pl button { cursor: pointer; background: none; border: 0; color: #fff1cf; font: 800 15px system-ui, sans-serif; padding: 7px 4px 7px 14px; }
+  .pl small { font-weight: 700; opacity: .7; margin-left: 6px; }
+  .pl .x { padding: 7px 12px 7px 6px; opacity: .55; font-size: 14px; }
+  .pl .x:hover { opacity: 1; }
   #langs { position: absolute; top: 14px; right: 14px; display: flex; gap: 6px; }
   #langs button { cursor: pointer; font: 800 15px system-ui, sans-serif; color: #fff1cf; background: rgba(0,0,0,.25); border: 2px solid rgba(255,215,106,.5); border-radius: 20px; padding: 7px 14px; }
   #langs button.on { background: #ffd76a; color: #3a0608; border-color: #ffd76a; }
@@ -45,6 +54,7 @@
   <label><span data-t="name">Dit navn (til highscorelisterne)</span>
     <input id="name" maxlength="24" placeholder="Spiller" autocomplete="off">
   </label>
+  <div id="players"></div>
   <button id="go" data-t="go">Klik for at starte</button>
   <div id="status"></div>
   <div id="small" data-t="small">Første gang hentes spillets billeder og lyde undervejs, så det kan tage et øjeblik.</div>

@@ -9,6 +9,46 @@ const DEAD = 0.35;
 // standard mapping: 0 A, 1 B, 2 X, 3 Y, 9 Start, 12 up, 13 down, 14 left, 15 right
 const FACE = [0, 1, 2, 3];
 
+
+// Started with the page: tells when a controller is found or unplugged, and on the start page
+// A or Start presses the start button.
+export function watchPads({ lang, onStartPage }) {
+  // a short message when a controller is found or unplugged
+  let toastEl = null, toastT = 0;
+  function toast(text) {
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.style.cssText = 'position:fixed;z-index:30;left:50%;top:18px;transform:translate(-50%,-20px);opacity:0;transition:opacity .25s,transform .25s;' +
+        'pointer-events:none;display:flex;align-items:center;gap:12px;padding:12px 20px 12px 14px;border-radius:16px;max-width:90vw;' +
+        'background:rgba(40,8,10,.92);border:2px solid #ffd76a;color:#fff1cf;font:800 17px system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.5);';
+      document.body.appendChild(toastEl);
+    }
+    toastEl.innerHTML = '<svg width="34" height="24" viewBox="0 0 34 24"><path d="M8 3h18c4 0 7 4 7 9l-1 6c-1 4-5 5-7 2l-3-4H12l-3 4c-2 3-6 2-7-2l-1-6c0-5 3-9 7-9z" fill="#ffd76a"/><g fill="#3a0608"><rect x="7" y="9" width="8" height="3" rx="1"/><rect x="9.5" y="6.5" width="3" height="8" rx="1"/><circle cx="24" cy="8" r="1.8"/><circle cx="27.5" cy="11.5" r="1.8"/></g></svg>';
+    const t = document.createElement('span'); t.textContent = text; toastEl.appendChild(t);
+    requestAnimationFrame(() => { toastEl.style.opacity = '1'; toastEl.style.transform = 'translate(-50%,0)'; });
+    clearTimeout(toastT);
+    toastT = setTimeout(() => { toastEl.style.opacity = '0'; toastEl.style.transform = 'translate(-50%,-20px)'; }, 3500);
+  }
+  const en = () => (lang ? lang() : 'da') === 'en';
+  const nameOf = g => (g.id || '').replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+  window.addEventListener('gamepadconnected', e => {
+    const n = [...navigator.getGamepads()].filter(Boolean).length;
+    const who = n > 1 ? (en() ? ` – player ${n}` : ` – spiller ${n}`) : '';
+    toast((en() ? 'Controller connected' : 'Controller tilsluttet') + who + (nameOf(e.gamepad) ? ': ' + nameOf(e.gamepad) : ''));
+  });
+  window.addEventListener('gamepaddisconnected', () => toast(en() ? 'Controller disconnected' : 'Controller frakoblet'));
+  let was = false;
+  (function loop() {
+    const start = onStartPage();
+    if (!start) return;
+    const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
+    const down = pads.some(p => (p.buttons[0] && p.buttons[0].pressed) || (p.buttons[9] && p.buttons[9].pressed));
+    if (down && !was) start();
+    was = down;
+    requestAnimationFrame(loop);
+  })();
+}
+
 export function setupGamepad({ press, state, setHidden, pointer }) {
   let used = false;                 // has a gamepad been used (hides the touch controls)
   const held = new Map();           // per pad: the keys it holds

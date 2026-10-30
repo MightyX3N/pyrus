@@ -153,7 +153,8 @@ local ply = {}
 function ply:IsValid() return true end
 function ply:Nick() return JS_name() end
 function ply:Name() return JS_name() end
-function ply:SteamID64() return "76561190000000001" end
+-- each name on the start page is its own player, with its own progress (an ID made from the name)
+function ply:SteamID64() return JS_playerid() end
 function ply:SteamID() return "STEAM_0:0:1" end
 function ply:IsListenServerHost() return true end
 function ply:IsSuperAdmin() return true end

@@ -4,7 +4,7 @@
 import { Lua } from 'wasmoon-lua5.1';
 import GMOD_LUA from './gmod.lua';
 import { setupTouch } from './touch.js';
-import { setupGamepad } from './gamepad.js';
+import { setupGamepad, watchPads } from './gamepad.js';
 
 const GAME = 'game/';                       // the gamemode folder, copied as it is
 const SEP = '\u0001';
@@ -19,11 +19,11 @@ const TEXT = {
   da: { intro: "Pyrus' julekalender – med sommerferie og halloween. Spil med mus og tastatur – eller på telefon og tablet.",
     name: 'Dit navn (til highscorelisterne)', go: 'Klik for at starte', player: 'Spiller',
     small: 'Første gang hentes spillets billeder og lyde undervejs, så det kan tage et øjeblik.',
-    loading: 'Henter spillet…', fonts: 'Henter skrifttyper…', lua: 'Starter Lua…', starting: 'Starter spillet…', failed: 'Noget gik galt: ' },
+    loading: 'Henter spillet…', saved: 'Gemte spillere – tryk for at spille videre:', doors: 'låger', door: 'låge', del: 'Slet %s og alle hans/hendes resultater?', fonts: 'Henter skrifttyper…', lua: 'Starter Lua…', starting: 'Starter spillet…', failed: 'Noget gik galt: ' },
   en: { intro: "Pyrus' Christmas calendar – with summer holiday and Halloween. Play with mouse and keyboard – or on a phone or tablet.",
     name: 'Your name (for the highscore lists)', go: 'Click to start', player: 'Player',
     small: "The first time, the game's pictures and sounds are fetched as you go, so it can take a moment.",
-    loading: 'Fetching the game…', fonts: 'Fetching fonts…', lua: 'Starting Lua…', starting: 'Starting the game…', failed: 'Something went wrong: ' },
+    loading: 'Fetching the game…', saved: 'Saved players – tap one to carry on:', doors: 'doors', door: 'door', del: 'Delete %s and all their progress?', fonts: 'Fetching fonts…', lua: 'Starting Lua…', starting: 'Starting the game…', failed: 'Something went wrong: ' },
 };
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 let LANG = store('an_lang') || ((navigator.languages || [navigator.language || '']).some(l => /^(da|nb|nn|no)\b/i.test(l)) ? 'da' : 'en');
@@ -35,6 +35,7 @@ function applyLang() {
   const nm = document.getElementById('name');
   if (nm) nm.placeholder = T('player');
   for (const b of document.querySelectorAll('#langs button')) b.classList.toggle('on', b.dataset.lang === LANG);
+  if (typeof showPlayers === 'function') try { showPlayers(); } catch (e) { }
 }
 for (const b of document.querySelectorAll('#langs button')) {
   b.addEventListener('click', e => { e.stopPropagation(); LANG = b.dataset.lang; store('an_lang', LANG); applyLang(); });
@@ -42,6 +43,59 @@ for (const b of document.querySelectorAll('#langs button')) {
 applyLang();
 
 function status(t) { if (statusEl) statusEl.textContent = t; }
+
+// players: each name is its own player in the game (an ID made from the name, so the same name
+// always gets the same progress back); the start page lists the saved ones
+const PDIR = 'gmdata:alletidersnisse/players/';
+function playerId(name) {
+  let h = 2166136261;
+  for (const c of new TextEncoder().encode(name.trim().toLowerCase())) { h ^= c; h = Math.imul(h, 16777619) >>> 0; }
+  return '7656119' + String(h).padStart(10, '0');
+}
+function currentName() { return (store('an_name') || '').trim() || T('player'); }
+function savedPlayers() {
+  const out = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(PDIR)) continue;
+    try {
+      const rec = JSON.parse(localStorage.getItem(k));
+      const doors = rec.prog && rec.prog.doors ? Object.values(rec.prog.doors).filter(d => d && d.done).length : 0;
+      out.push({ key: k, name: rec.name || '?', doors });
+    } catch (e) { }
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+// (before names were players, everyone was one fixed ID: move that progress to its name)
+try {
+  const old = PDIR + '76561190000000001.json', v = localStorage.getItem(old);
+  if (v) {
+    const rec = JSON.parse(v), nk = PDIR + playerId(rec.name && rec.name !== '?' ? rec.name : currentName()) + '.json';
+    if (!localStorage.getItem(nk)) localStorage.setItem(nk, v);
+    localStorage.removeItem(old);
+  }
+} catch (e) { }
+function showPlayers() {
+  const box = document.getElementById('players');
+  if (!box) return;
+  box.innerHTML = '';
+  const list = savedPlayers();
+  if (!list.length) return;
+  const lbl = document.createElement('div'); lbl.className = 'lbl'; lbl.textContent = T('saved'); box.appendChild(lbl);
+  const nm = document.getElementById('name');
+  const typed = (nm && nm.value.trim().toLowerCase()) || '';
+  for (const p of list) {
+    const el = document.createElement('div');
+    el.className = 'pl' + (p.name.toLowerCase() === typed ? ' on' : '');
+    const b = document.createElement('button');
+    b.textContent = p.name;
+    const sm = document.createElement('small'); sm.textContent = `${p.doors} ${T(p.doors === 1 ? 'door' : 'doors')}`; b.appendChild(sm);
+    b.addEventListener('click', () => { if (nm) { nm.value = p.name; showPlayers(); } });
+    const x = document.createElement('button'); x.className = 'x'; x.textContent = '✕'; x.title = '×';
+    x.addEventListener('click', () => { if (confirm(T('del').replace('%s', p.name))) { localStorage.removeItem(p.key); showPlayers(); } });
+    el.appendChild(b); el.appendChild(x); box.appendChild(el);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // pictures
@@ -447,7 +501,8 @@ async function boot() {
   });
   G.set('JS_sndopen', (p, flags) => sndOpen(p, flags));
   G.set('JS_snd', (id, op, v) => snd(id, op, v));
-  G.set('JS_name', () => localStorage.getItem('an_name') || T('player'));
+  G.set('JS_name', () => currentName());
+  G.set('JS_playerid', () => playerId(currentName()));
   G.set('JS_openurl', u => window.open(u, '_blank', 'noopener'));
   G.set('JS_quit', () => location.reload());
   lua.doStringSync(GMOD_LUA);
@@ -515,7 +570,7 @@ function start() {
   if (started) return;
   started = true;
   const name = document.getElementById('name');
-  if (name && name.value.trim()) localStorage.setItem('an_name', name.value.trim().slice(0, 24));
+  if (name) localStorage.setItem('an_name', name.value.trim().slice(0, 24));
   audio().resume();
   overlay.classList.add('busy');
   boot().then(() => overlay.remove()).catch(e => { console.error(e); started = false; overlay.classList.remove('busy'); status(T('failed') + e.message); });
@@ -523,4 +578,6 @@ function start() {
 document.getElementById('go').addEventListener('click', start);
 document.getElementById('name')?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); start(); } });
 const nm = document.getElementById('name');
-if (nm) nm.value = localStorage.getItem('an_name') || '';
+if (nm) { nm.value = localStorage.getItem('an_name') || ''; nm.addEventListener('input', () => showPlayers()); }
+showPlayers();
+watchPads({ lang: () => LANG, onStartPage: () => (document.getElementById('overlay') && !started ? start : null) });

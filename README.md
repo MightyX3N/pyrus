@@ -32,6 +32,8 @@ The seasons are open all year.
 - **Gamepads** – on the website, any standard controller: in the keyboard games the stick moves and
   A B X Y are the game's buttons, two controllers for the Duel; elsewhere the stick moves a pointer
   and A clicks.
+- **Several players on one device** – on the website each name typed on the start page has its
+  own progress, and the saved players are listed there to pick from; the highscore lists are shared.
 
 ## Play it in Garry's Mod
 
