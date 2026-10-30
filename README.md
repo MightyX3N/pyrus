@@ -90,6 +90,12 @@ the site is just a matter of updating `game/`.
 Kapløb, the race between several players on a server, needs Garry's Mod multiplayer and is only
 in the gamemode.
 
+## Contributing
+
+Suggestions for new or better levels, fixes and translations are welcome as pull requests – see
+[CONTRIBUTING.md](CONTRIBUTING.md). They are not added straight away: every change is checked
+thoroughly before it is merged.
+
 ## Credits
 
 *Alletiders Nisse* and Pyrus belong to their original creators (TV 2 and the team behind Pyrus),
