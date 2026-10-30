@@ -5,6 +5,7 @@ import { Lua } from 'wasmoon-lua5.1';
 import GMOD_LUA from './gmod.lua';
 import { setupTouch } from './touch.js';
 import { setupGamepad, watchPads } from './gamepad.js';
+import { setupTransfer } from './transfer.js';
 
 const GAME = 'game/';                       // the gamemode folder, copied as it is
 const SEP = '\u0001';
@@ -19,11 +20,21 @@ const TEXT = {
   da: { intro: "Pyrus' julekalender – med sommerferie og halloween. Spil med mus og tastatur – eller på telefon og tablet.",
     name: 'Dit navn (til highscorelisterne)', go: 'Klik for at starte', player: 'Spiller',
     small: 'Første gang hentes spillets billeder og lyde undervejs, så det kan tage et øjeblik.',
-    loading: 'Henter spillet…', saved: 'Gemte spillere – tryk for at spille videre:', doors: 'låger', door: 'låge', del: 'Slet %s og alle hans/hendes resultater?', fonts: 'Henter skrifttyper…', lua: 'Starter Lua…', starting: 'Starter spillet…', failed: 'Noget gik galt: ' },
+    loading: 'Henter spillet…', saved: 'Gemte spillere – tryk for at spille videre:', doors: 'låger', door: 'låge', close: 'Luk', qrBtn: '📱 Fortsæt på telefon', exportBtn: '⬇ Gem i en fil', importBtn: '⬆ Hent fra en fil',
+    qrTitle: 'Fortsæt på telefonen', qrHow: 'Scan koden med telefonens kamera – så åbner spillet med dine fremskridt.',
+    qrNote: 'Det er en kopi: herefter gemmes de to steder hver for sig.', qrNone: 'Skriv eller vælg dit navn først (og spil lidt), så der er noget at tage med.',
+    qrBig: 'Der er for meget gemt til en QR-kode – brug »Gem i en fil« i stedet.', qrAsk: 'Hent spilleren %s til denne enhed?',
+    qrReplace: 'Spilleren %s findes allerede her. Erstat den med den fra QR-koden?', loadAsk: 'Hent det gemte (%s) til denne enhed? Spillere med samme navn bliver erstattet.',
+    loaded: 'Hentet!', loadedN: '%d spiller(e) er hentet.', loadFail: 'Det kunne ikke hentes', del: 'Slet %s og alle hans/hendes resultater?', fonts: 'Henter skrifttyper…', lua: 'Starter Lua…', starting: 'Starter spillet…', failed: 'Noget gik galt: ' },
   en: { intro: "Pyrus' Christmas calendar – with summer holiday and Halloween. Play with mouse and keyboard – or on a phone or tablet.",
     name: 'Your name (for the highscore lists)', go: 'Click to start', player: 'Player',
     small: "The first time, the game's pictures and sounds are fetched as you go, so it can take a moment.",
-    loading: 'Fetching the game…', saved: 'Saved players – tap one to carry on:', doors: 'doors', door: 'door', del: 'Delete %s and all their progress?', fonts: 'Fetching fonts…', lua: 'Starting Lua…', starting: 'Starting the game…', failed: 'Something went wrong: ' },
+    loading: 'Fetching the game…', saved: 'Saved players – tap one to carry on:', doors: 'doors', door: 'door', close: 'Close', qrBtn: '📱 Carry on on a phone', exportBtn: '⬇ Save to a file', importBtn: '⬆ Load from a file',
+    qrTitle: 'Carry on on your phone', qrHow: "Scan the code with your phone's camera – the game opens with your progress.",
+    qrNote: "It's a copy: from then on the two places save separately.", qrNone: 'Type or pick your name first (and play a bit), so there is something to take along.',
+    qrBig: 'Too much is saved for a QR code – use "Save to a file" instead.', qrAsk: 'Bring the player %s to this device?',
+    qrReplace: 'The player %s is already here. Replace it with the one from the QR code?', loadAsk: 'Load the saved data (%s) onto this device? Players with the same name are replaced.',
+    loaded: 'Loaded!', loadedN: '%d player(s) loaded.', loadFail: "It couldn't be loaded", del: 'Delete %s and all their progress?', fonts: 'Fetching fonts…', lua: 'Starting Lua…', starting: 'Starting the game…', failed: 'Something went wrong: ' },
 };
 function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 let LANG = store('an_lang') || ((navigator.languages || [navigator.language || '']).some(l => /^(da|nb|nn|no)\b/i.test(l)) ? 'da' : 'en');
@@ -36,6 +47,7 @@ function applyLang() {
   if (nm) nm.placeholder = T('player');
   for (const b of document.querySelectorAll('#langs button')) b.classList.toggle('on', b.dataset.lang === LANG);
   if (typeof showPlayers === 'function') try { showPlayers(); } catch (e) { }
+  try { transfer.texts(); } catch (e) { }
 }
 for (const b of document.querySelectorAll('#langs button')) {
   b.addEventListener('click', e => { e.stopPropagation(); LANG = b.dataset.lang; store('an_lang', LANG); applyLang(); });
@@ -580,4 +592,10 @@ document.getElementById('name')?.addEventListener('keydown', e => { if (e.key ==
 const nm = document.getElementById('name');
 if (nm) { nm.value = localStorage.getItem('an_name') || ''; nm.addEventListener('input', () => showPlayers()); }
 showPlayers();
+const transfer = setupTransfer({
+  T, lang: () => LANG,
+  currentKey: () => PDIR + playerId(((document.getElementById('name') || {}).value || '').trim() || currentName()) + '.json',
+  refresh: () => showPlayers(),
+  setName: n => { const el = document.getElementById('name'); if (el) el.value = n; store('an_name', n); },
+});
 watchPads({ lang: () => LANG, onStartPage: () => (document.getElementById('overlay') && !started ? start : null) });

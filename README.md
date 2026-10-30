@@ -34,6 +34,8 @@ The seasons are open all year.
   and A clicks.
 - **Several players on one device** – on the website each name typed on the start page has its
   own progress, and the saved players are listed there to pick from; the highscore lists are shared.
+- **Taking it along** – a QR code carries a player over to a phone, and everything saved can be
+  put in a file and loaded on another device.
 
 ## Play it in Garry's Mod
 
@@ -62,7 +64,8 @@ same Lua files through a small translation layer:
   `draw`, `render`, `input`, `sound`, `file`, `net`, `vgui`, hooks and timers – on top of the
   browser. The server half of the gamemode (saving, highscores, duels) runs in the same Lua,
   talking to the client through a local `net`.
-- **`tools/src/touch.js`** and **`gamepad.js`** add the touch controls and gamepad support.
+- **`tools/src/touch.js`**, **`gamepad.js`** and **`transfer.js`** add the touch controls, gamepad
+  support, and moving saves between devices.
 - **`tools/src/main.js`** is the browser side: it draws each frame on a canvas, loads the pictures
   and fonts, plays sound with Web Audio, passes on keys and the mouse, and keeps the saves in the
   browser.
