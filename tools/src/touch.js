@@ -8,14 +8,15 @@ const K = {};
 ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].forEach((n, i) => { K[n] = i + 1; });
 Object.assign(K, { PAD_0: 37, PAD_ENTER: 51, ENTER: 64, SPACE: 65, RSHIFT: 80, LCONTROL: 83, RCONTROL: 84, UP: 88, LEFT: 89, DOWN: 90, RIGHT: 91 });
 
-// What each keyboard game uses: the stick, and buttons (label, key, [label in English])
+// What each keyboard game uses: the stick (stick: 'h' = only left and right, for games where up and
+// down are buttons like jump and duck; false = none), and buttons (label, key, label in English)
 // keys are the game's own: UP/DOWN/LEFT/RIGHT, SPACE, CTRL, ENTER, E
 const GAMES = {
-  1: { buttons: [['Hop', 'UP', 'Jump'], ['Duk', 'DOWN', 'Duck']] },
+  1: { stick: 'h', buttons: [['Hop', 'UP', 'Jump'], ['Duk', 'DOWN', 'Duck']] },
   2: {},
   9: { buttons: [['Olie', 'SPACE', 'Oil']] },
   11: { stick: false, buttons: [['Drej', 'SPACE', 'Turn']] },
-  12: { buttons: [['Skyd', 'CTRL', 'Shoot'], ['Videre', 'SPACE', 'Next']] },
+  12: { stick: 'h', buttons: [['Skyd', 'CTRL', 'Shoot'], ['Videre', 'SPACE', 'Next']] },
   14: {},
   16: {},
   19: { buttons: [['Skyd', 'CTRL', 'Shoot'], ['Teleport', 'SPACE', 'Teleport'], ['Videre', 'ENTER', 'Next']] },
@@ -26,7 +27,7 @@ const GAMES = {
   105: { buttons: [['Byg', 'SPACE', 'Build'], ['Skift', 'CTRL', 'Change'], ['Færdig', 'E', 'Done']] },
   201: { buttons: [['Skær', 'SPACE', 'Cut']] },
   202: {},
-  203: { buttons: [['Hop', 'UP', 'Jump'], ['Ring på', 'SPACE', 'Ring']] },
+  203: { stick: 'h', buttons: [['Hop', 'UP', 'Jump'], ['Ring på', 'SPACE', 'Ring']] },
   204: { buttons: [['Lygte', 'SPACE', 'Lantern']] },
 };
 // which real keys a game key is for each player (single player, and the Duel's two players – like cl_split.lua)
@@ -37,9 +38,11 @@ const MAP = {
 };
 
 const CSS = `
-.tc { position: fixed; z-index: 5; pointer-events: none; user-select: none; -webkit-user-select: none; touch-action: none; }
+.tc { position: fixed; z-index: 5; pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; }
 .tc * { pointer-events: auto; touch-action: none; }
 .tc-stick { position: absolute; width: clamp(110px, 36vh, 160px); height: clamp(110px, 36vh, 160px); border-radius: 50%; background: rgba(255,241,207,.16); border: 3px solid rgba(255,241,207,.45); box-sizing: border-box; }
+.tc-stick.h { height: clamp(64px, 19vh, 84px); border-radius: 50px; width: clamp(150px, 46vh, 210px); }
+.tc-stick.h .tc-knob { width: auto; height: 76%; aspect-ratio: 1; margin: 0; left: 50%; top: 12%; translate: -50% 0; }
 .tc-knob { position: absolute; left: 50%; top: 50%; width: 42%; height: 42%; transform-origin: center; margin: -21% 0 0 -21%; border-radius: 50%; background: rgba(255,241,207,.6); box-shadow: 0 2px 8px rgba(0,0,0,.4); pointer-events: none; }
 .tc-btns { position: absolute; display: flex; flex-wrap: wrap-reverse; gap: 12px; width: 220px; justify-content: flex-end; }
 .tc-btn { opacity: .92; min-width: clamp(60px, 19vh, 84px); height: clamp(60px, 19vh, 84px); padding: 0 10px; border-radius: 42px; border: 3px solid rgba(255,215,106,.85); background: rgba(200,16,46,.55); color: #fff; font: 800 18px system-ui, sans-serif; display: flex; align-items: center; justify-content: center; box-sizing: border-box; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
@@ -53,6 +56,15 @@ const CSS = `
 `;
 
 export function setupTouch({ keyFn, state, lang }) {
+  // phones: a long press must not open "look up / search / find in page", select text or zoom
+  const isField = t => t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
+  document.addEventListener('contextmenu', e => { if (!isField(e.target)) e.preventDefault(); });
+  document.addEventListener('selectstart', e => { if (!isField(e.target)) e.preventDefault(); });
+  document.addEventListener('touchstart', e => {
+    if (!isField(e.target) && (e.target.closest?.('.tc') || e.target.id === 'screen')) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  document.addEventListener('dblclick', e => e.preventDefault());
   const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
   const style = document.createElement('style');
   style.textContent = CSS;
@@ -112,7 +124,8 @@ export function setupTouch({ keyFn, state, lang }) {
     // the stick
     if (game.stick !== false) {
       const st = document.createElement('div');
-      st.className = 'tc-stick';
+      st.className = 'tc-stick' + (game.stick === 'h' ? ' h' : '');
+      const horiz = game.stick === 'h';
       const knob = document.createElement('div');
       knob.className = 'tc-knob';
       st.appendChild(knob);
@@ -122,10 +135,11 @@ export function setupTouch({ keyFn, state, lang }) {
       const move = e => {
         const r = st.getBoundingClientRect();
         let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-        const max = r.width / 2, len = Math.hypot(dx, dy);
+        if (horiz) dy = 0;
+        const max = (horiz ? r.width / 2 - r.height / 2 : r.width / 2), len = Math.hypot(dx, dy);
         if (len > max) { dx *= max / len; dy *= max / len; }
         knob.style.transform = `translate(${dx}px, ${dy}px)`;
-        const dead = max * 0.3;
+        const dead = horiz ? max * 0.2 : max * 0.3;
         // eight ways: a direction counts when the stick leans that way enough
         const a = Math.atan2(dy, dx);
         const on = len > dead;
