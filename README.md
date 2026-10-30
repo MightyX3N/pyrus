@@ -1,6 +1,6 @@
 # Alletiders Nisse
 
-**Play it at [pyrus.lol](https://pyrus.lol)**
+**Play it at [pyrus.lol](https://pyrus.lol)** · **[Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3829837973)**
 
 A fan remake of *Alletiders Nisse*, the Pyrus Christmas calendar CD-ROM, built as a Garry's Mod
 gamemode and playable straight in the browser.
@@ -50,8 +50,8 @@ The `game/` folder in this repository is the whole gamemode, so you can play it 
 
 In Garry's Mod you also get Kapløb, the race between several players, when you host it for friends.
 
-The gamemode will also come to the **Steam Workshop** later, so it can be installed with a single
-click.
+Or subscribe to it on the **[Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3829837973)**,
+and it installs itself.
 
 ## How it runs in the browser
 
