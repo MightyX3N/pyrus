@@ -29,6 +29,9 @@ The seasons are open all year.
 - **Phones and tablets** – on the website, tapping works as the mouse, and the keyboard games get
   a stick and named buttons (one set per player in the Duel). It can be added to the home screen
   like an app.
+- **Gamepads** – on the website, any standard controller: in the keyboard games the stick moves and
+  A B X Y are the game's buttons, two controllers for the Duel; elsewhere the stick moves a pointer
+  and A clicks.
 
 ## Play it in Garry's Mod
 
@@ -57,7 +60,7 @@ same Lua files through a small translation layer:
   `draw`, `render`, `input`, `sound`, `file`, `net`, `vgui`, hooks and timers – on top of the
   browser. The server half of the gamemode (saving, highscores, duels) runs in the same Lua,
   talking to the client through a local `net`.
-- **`tools/src/touch.js`** adds the touch controls for phones and tablets.
+- **`tools/src/touch.js`** and **`gamepad.js`** add the touch controls and gamepad support.
 - **`tools/src/main.js`** is the browser side: it draws each frame on a canvas, loads the pictures
   and fonts, plays sound with Web Audio, passes on keys and the mouse, and keeps the saves in the
   browser.

@@ -4,6 +4,7 @@
 import { Lua } from 'wasmoon-lua5.1';
 import GMOD_LUA from './gmod.lua';
 import { setupTouch } from './touch.js';
+import { setupGamepad } from './gamepad.js';
 
 const GAME = 'game/';                       // the gamemode folder, copied as it is
 const SEP = '\u0001';
@@ -466,6 +467,15 @@ function run() {
   const stateFn = lua.global.get('WEB_STATE');
   let gameState = '', lang = 'da';
   const touch = setupTouch({ keyFn: lua.global.get('WEB_KEY'), state: () => gameState, lang: () => lang });
+  const pad = setupGamepad({
+    press: touch.press, state: () => gameState, setHidden: touch.setHidden,
+    pointer: {
+      get: () => ({ x: mx, y: my, w: canvas.width, h: canvas.height, scale: canvas.width / canvas.getBoundingClientRect().width }),
+      move: (x, y) => { mx = x; my = y; },
+      click: down => mouseQ.push({ code: 107, down, x: mx, y: my, seen: false }),
+      wheel: d => lua.global.get('WEB_WHEEL')(d),
+    },
+  });
   let frameNo = 0;
   let last = performance.now();
   function tick() {
@@ -480,6 +490,7 @@ function run() {
       soundFn(id, ok);
       if (ok && ch && ch.autoplay && !ch.playing) chPlay(ch);
     }
+    try { pad.poll(ft); } catch (e) { console.error(e); }
     mouseFlush();
     // (while a press waits, the frame is drawn with the pointer where it was pressed)
     const q = mouseQ.find(m => !m.seen);

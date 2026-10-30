@@ -4,14 +4,14 @@
 // Also: a fullscreen button and a "turn your phone" message.
 
 // The keys (Garry's Mod's numbers, as in gmod.lua)
-const K = {};
+export const K = {};
 ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].forEach((n, i) => { K[n] = i + 1; });
 Object.assign(K, { PAD_0: 37, PAD_ENTER: 51, ENTER: 64, SPACE: 65, RSHIFT: 80, LCONTROL: 83, RCONTROL: 84, UP: 88, LEFT: 89, DOWN: 90, RIGHT: 91 });
 
 // What each keyboard game uses: the stick (stick: 'h' = only left and right, for games where up and
 // down are buttons like jump and duck; false = none), and buttons (label, key, label in English)
 // keys are the game's own: UP/DOWN/LEFT/RIGHT, SPACE, CTRL, ENTER, E
-const GAMES = {
+export const GAMES = {
   1: { stick: 'h', buttons: [['Hop', 'UP', 'Jump'], ['Duk', 'DOWN', 'Duck']] },
   2: {},
   9: { buttons: [['Olie', 'SPACE', 'Oil']] },
@@ -31,7 +31,7 @@ const GAMES = {
   204: { buttons: [['Lygte', 'SPACE', 'Lantern']] },
 };
 // which real keys a game key is for each player (single player, and the Duel's two players – like cl_split.lua)
-const MAP = {
+export const MAP = {
   solo: { UP: 'UP', DOWN: 'DOWN', LEFT: 'LEFT', RIGHT: 'RIGHT', SPACE: 'SPACE', CTRL: 'LCONTROL', ENTER: 'ENTER', E: 'E' },
   p1: { UP: 'W', DOWN: 'S', LEFT: 'A', RIGHT: 'D', SPACE: 'SPACE', CTRL: 'LCONTROL', ENTER: 'SPACE', E: 'E' },
   p2: { UP: 'UP', DOWN: 'DOWN', LEFT: 'LEFT', RIGHT: 'RIGHT', SPACE: 'ENTER', CTRL: 'RCONTROL', ENTER: 'ENTER', E: 'RSHIFT' },
@@ -112,7 +112,8 @@ export function setupTouch({ keyFn, state, lang }) {
   window.addEventListener('resize', checkRotate);
   checkRotate();
 
-  if (!isTouch) return { update() {} };
+  let hidden = false;
+  if (!isTouch) return { update() {}, press, setHidden() {} };
 
   // one set of controls: a stick (left) and the game's buttons (right), for one player
   function makeSet(who, game, side) {
@@ -197,6 +198,12 @@ export function setupTouch({ keyFn, state, lang }) {
 
   // follow the game: build the controls when a keyboard game starts, remove them when it ends
   let current = '', sets = [];
+  function setHidden(h) {
+    if (h === hidden) return;
+    hidden = h;
+    for (const el of document.querySelectorAll('.tc')) el.style.display = h ? 'none' : '';
+  }
+  document.addEventListener('touchstart', () => setHidden(false), { passive: true });
   function update() {
     const s = state() || '';
     if (s === current) return;
@@ -210,6 +217,7 @@ export function setupTouch({ keyFn, state, lang }) {
     if (!game) return;
     if (m[1] === 'game') sets.push(makeSet('solo', game, 'solo'));
     else { sets.push(makeSet('p1', game, 'left')); sets.push(makeSet('p2', game, 'right')); }
+    if (hidden) for (const el of document.querySelectorAll('.tc')) el.style.display = 'none';
   }
-  return { update };
+  return { update, press, setHidden };
 }
